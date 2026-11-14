@@ -274,7 +274,7 @@ Cargar la matriz de  datos, para trabajar.
 data <- read.csv("../datos/nofetal2015.csv")
 ```
 
-Averiguamos las dimensiones de la matriz de datos...
+Averiguamos las dimensiones de la matriz de datos ......
 
 ```{r}
 dim(data)
