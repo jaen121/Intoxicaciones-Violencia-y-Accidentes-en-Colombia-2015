@@ -1,0 +1,655 @@
+
+
+---
+title: "Análisis de las Muertes por Causas Evitables en Colombia: Intoxicaciones, Violencia y Accidentes en 2015"
+author: "Jairo Enrique Alba"
+date: ""
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+bibliography: referencias.bib
+csl: apa.csl
+---
+
+
+
+# Planteamiento del problema
+
+
+En Colombia, las muertes por causas evitables, como los efectos tóxicos derivados del contacto con animales venenosos y las ocasionadas por violencia interpersonal o accidentes, representan un desafío persistente para la salud pública. Aunque el DANE clasifica estos eventos mediante los códigos CIE-10 —particularmente los rangos T630–T639 para intoxicaciones por animales venenosos y X00–Y34 para causas externas—, los datos disponibles no siempre han sido analizados de forma conjunta ni con un enfoque geográfico que permita comprender patrones regionales de riesgo.
+
+La falta de estudios integrales que correlacionen estas causas impide una adecuada priorización de recursos y el diseño de intervenciones diferenciales, particularmente en zonas rurales, periféricas o con acceso limitado a servicios de salud. Por ejemplo, mientras en algunas regiones se reportan con frecuencia mordeduras de serpiente (T630), otras muestran altos niveles de mortalidad por violencia interpersonal (X85–Y09) o accidentes (V01–X39). Esta dispersión de los registros dificulta la formulación de políticas públicas coherentes y efectivas.
+
+Además, existe el riesgo de subregistro o clasificación errónea de muchos de estos eventos, especialmente en zonas remotas, lo que agrava la invisibilización de problemáticas locales que requieren atención urgente. Comprender cómo se distribuyen geográficamente estos eventos, y si existen patrones coincidentes entre intoxicaciones y muertes violentas o accidentales, puede ser clave para desarrollar estrategias de prevención más focalizadas.
+
+Por tanto, se hace necesario analizar de forma articulada los datos del DANE correspondientes al año 2015, a fin de identificar los territorios más afectados por estas causas de muerte y proporcionar evidencia que fortalezca las políticas en salud, seguridad y educación comunitaria.
+
+
+
+
+# Objetivos del proyecto
+
+
+1. Analizar la distribución geográfica de los casos registrados por efectos tóxicos derivados del contacto con animales venenosos en Colombia durante el año 2015, utilizando los códigos CIE-10 del DANE, con el fin de identificar patrones regionales y aportar información útil para el diseño de estrategias de prevención y atención en las zonas más afectadas.
+
+2. Identificar los departamentos con mayor número de defunciones registradas por violencia interpersonal y accidentes en Colombia, con base en los datos del DANE, a fin de reconocer los territorios más afectados y advertir posibles subregistros que podrían impactar la formulación de políticas públicas en salud y seguridad.
+
+
+# Desarrollo del proyecto
+
+
+El desarrollo de este proyecto se llevará a cabo en R que es un lenguaje de programación y un entorno de software libre especializado en análisis estadístico, minería de datos y visualización gráfica. Es ampliamente utilizado por estadísticos, científicos de datos e investigadores debido a su potencia para el tratamiento de grandes volúmenes de datos, su flexibilidad y su amplia gama de paquetes y funciones especializadas.
+
+Entre sus principales características se destacan:
+
++ Soporte avanzado para estadísticas, modelamiento y aprendizaje automático.
+
++ Gráficas de alta calidad.
+
++ Comunidad activa y miles de paquetes disponibles a través del repositorio CRAN.
+
+**RStudio** es un entorno de desarrollo integrado (IDE) para R que facilita la escritura de código, el análisis de datos y la generación de informes. Es una herramienta muy popular porque mejora la experiencia de uso de R, ofreciendo una interfaz amigable y múltiples funcionalidades que organizan el trabajo del usuario.
+
+Entre sus componentes principales se incluyen:
+
++ Editor de scripts con resaltado de sintaxis.
+
++ Consola interactiva.
+
++ Panel de entorno y variables.
+
++ Visor de gráficos, archivos, paquetes y ayuda.
+
++ Integración con R Markdown para generar documentos dinámicos.
+
+RStudio está disponible tanto en versión gratuita como en versión profesional (de pago), y puede instalarse localmente o usarse en la nube.
+
+## Manejo de R
+
+### Intalación de R y R-Studio
+
+Para instalar R y R-studio en tu equipo revisa el siguiente tutorial:
+
+<center>
+<https://www.youtube.com/watch?v=hbgzW3Cvda4>
+</center>
+
+
+### Creación de la carpeta donde trabajaremos el proyecto
+
+Crear una carpeta en escritorio  con un nombre por ejemplo **limpieza de datos** y dentro de esta carpeta crear cuatro carpetas con los siguientes nombres:
+
+ + Datos: colocaremos todos los datos en ella.
+ 
+ + Documentación: aquí colocamos toda la documentación necesaria.
+ 
+ + Protocolo: aquí colocaremos los Script.
+ 
+ + Resultados: aquí colocamos los resultados obtenidos.
+
+### Creación del proyecto en RStudio
+
+Para crear el proyecto en RStudio, se sigue la siguiente ruta:
+
+1. **Abrir RStudio**
+
+Inicia RStudio normalmente.
+
+2. **Ir a crear un nuevo proyecto**
+
+Haz clic en File → New Project...
+
+
+3. **Elegir “Existing Directory”**
+
+Selecciona la opción “Existing Directory”. Esto te permitirá usar una carpeta que ya tienes en tu computador.
+
+4. **Seleccionar la carpeta**
+
+Haz clic en Browse... y busca la carpeta donde ya tienes las cuatro carpetas mencionadas 
+anteriormente.
+
+Asegúrate de que esa carpeta contenga los archivos con los que vas a trabajar.
+
+5. **Crear el proyecto**
+
+Una vez seleccionada la carpeta, haz clic en Create Project.
+
+RStudio creará un archivo .Rproj dentro de esa carpeta (carpeta principal: donde estan las cuatro carpetas).
+
+La sesión se reiniciará y verás que ahora estás trabajando dentro de ese proyecto (en la esquina superior derecha aparecerá el nombre de la carpeta como nombre del proyecto).
+
+Una vez creado el proyecto crea un nuevo script, los pasos son los siguientes:
+
+#### Crear un script
+
+**Paso 1: Abre tu proyecto en RStudio**
+Si ya estás dentro de tu proyecto (arriba a la derecha aparece el nombre), continúa.
+
+**Paso 2: Crear el script**
+Ve a la barra superior y haz clic en:
+File → New File → R Script
+
+Esto abrirá una nueva pestaña en el editor de código con un archivo en blanco.
+
+**Paso 3: Escribe tu código.**
+ 
+
+##### Ejecutar el script
+
+Opciones para ejecutar código en un script, se puede hacer de las siguientes formas:
+
+**1. Ejecutar una línea o selección**
+Haz clic en la línea de código que quieres ejecutar.
+
+Luego presiona Ctrl + Enter (Windows/Linux) o Cmd + Enter (Mac).
+
+También puedes seleccionar varias líneas y presionar el mismo atajo para ejecutarlas todas juntas.
+
+El resultado aparecerá en la consola de la parte inferior.
+
+ **2. Ejecutar todo el script completo**
+ 
+Ve al menú superior y haz clic en:
+Code → Run Region → Run All
+o simplemente presiona Ctrl + Shift + Enter.
+
+Esto ejecutará todo el contenido del script desde el principio hasta el final.
+
+**3. Botón “Run”**
+
+En la parte superior derecha del editor de script, hay un botón verde que dice Run.
+
+Puedes hacer clic en ese botón:
+
+Ejecuta la línea donde está el cursor.
+
+O selecciona varias líneas y las ejecuta.
+
+Si haces clic en la flechita al lado de “Run”, puedes elegir:
+
+Run Current Line
+
+Run Selected Lines
+
+Run All
+
+### Crear un archivo R Markdown
+
+Si se desea construir un archivo html, donde se presente el reporte del proyecto como este documento que esta visualizando se debe seguir la siguiente ruta:
+
+Pasos para crear un archivo R Markdown
+ **1. Crear el archivo**
+En RStudio, ve a File → New File → R Markdown...
+
+**2. Configura el archivo**
+Se abrirá una ventana con campos:
+
+Title: El nombre del documento (ej. Mi análisis de datos)
+
+Author: Tu nombre (puede ser “Pepé” )
+
+Default Output Format: Escoge HTML (puedes cambiar luego a PDF o Word)
+
+Haz clic en OK.
+
+Puedes hacer uso de ChatGPT o DeepSeek para crear el archivo "archivo R Markdown", o revisa el siguiente video explicativo 
+
+<center>
+<https://www.youtube.com/watch?v=6Qj8yBFgT9Q>
+</center>
+
+**El proyecto correspondiente a este modulo es la presentación del proyecto en un documento R Markdown.** 
+
+Ya creado el documento R Markdown procederemos a desarrollar el proyecto.
+
+## Descargar los datos a trabajar 
+
+Descargamos los datos correspondientes a las defunciones presentadas en Colombia en el año 2015, el repositorio de los mismos se encuentran en el siguiente link
+
+<center>
+<https://microdatos.dane.gov.co/index.php/catalog/475> 
+</center>
+
+obtenemos la documentación en pdf, y la colocamos en la carpeta documentación, luego descargamos los microdatos (Defunciones) y los ubicamos en la carpeta datos.
+
+**A trabajar!!**
+
+
+### Cargar los Datos
+
+Para cargar los datos depende del tipo de archivos, en nuestro caso es "csv" delimitado por comas. 
+
+Si ya se tiene R instalado lo actualizamos mediante:
+
+
+ 
+```{r}
+#install.packages("installr")
+#library(installr)
+#updateR()
+```
+ 
+ 
+ 
+### Instalar paquetes necesarios.
+ 
+Se instalan solo una vez, con los códigos correspondientes, los invito averiguar para que sirve cada uno con el uso de la IA, de su preferencia (ChatGPT, DeepSeek, ...)
+ 
+```{r}
+# Cargamos paquetes
+# install.packages("data.table") #para cargar datos
+# install.packages("dplyr")
+# install.packages("readxl") #para leer archivos excel
+# install.packages("ggplot2")
+# install.packages("writexl")
+# install.packages("writexl")
+# install.packages("DT")
+# install.packages("ggplot2")
+```
+
+### Cargar las librerias
+
+```{r, message=FALSE}
+library(data.table)
+library(dplyr)
+library(readxl)
+library(writexl)
+```
+
+### Cargar los Datos a R
+
+
+Verificación de los archivos que estan en la carpeta de datos, donde los descargamos.
+
+```{r}
+list.files("../datos")
+```
+
+Cargar la matriz de  datos, para trabajar. 
+
+```{r}
+data <- read.csv("../datos/nofetal2015.csv")
+```
+
+Averiguamos las dimensiones de la matriz de datos
+
+```{r}
+dim(data)
+```
+Nos indica que la matriz tiene 205220 filas y 68 columnas.
+
+
+Verificación de la estructura del dataframe
+
+
+Recuerda que el #, sirve para comentar una línea dentro del código, es decir no se ejecutará,
+
+```{r}
+# Verificar la estructura del dataframe
+# Mostrar estructura de las primeras 6 columnas
+str(data[, 1:6])
+
+# Para mostrar todas se utiliza 
+
+#str(data)
+```
+
+Verificar los nombres de las columnas, de la matriz
+
+```{r}
+# Verificar los nombres de las columnas
+colnames(data)
+```
+
+### Datos perdidos
+
+Revisar numero de datos perdidos en total y por columnas
+
+```{r}
+# Número total de datos perdidos en el dataframe
+total_na <- sum(is.na(data))
+
+print(paste("Total de datos perdidos:", total_na))
+```
+
+
+```{r}
+
+# Número de datos perdidos por columna
+na_por_columna <- colSums(is.na(data))
+
+# Crear un dataframe con los resultados
+tabla_na <- data.frame(
+  Columna = names(na_por_columna),
+  Datos_Perdidos = na_por_columna
+)
+
+# Agregar una fila con el total de datos perdidos
+tabla_na <- rbind(tabla_na, data.frame(Columna = "Total", Datos_Perdidos = total_na))
+
+
+# Ordenar la tabla en orden descendente
+tabla_na_ordenada <- tabla_na %>%
+  filter(Columna != "Total") %>%  # Excluir la fila "Total"
+  arrange(desc(Datos_Perdidos)) %>%  # Ordenar de mayor a menor
+  rbind(data.frame(Columna = "Total", Datos_Perdidos = total_na))  # Agregar la fila "Total" al final
+
+
+# Mostrar la tabla ordenada
+#print(tabla_na_ordenada)
+
+
+# Guardar la tabla ordenada en un archivo CSV (opcional)
+# write.csv(tabla_na_ordenada, file = "datos_perdidos_ordenados.csv", row.names = FALSE)
+
+# # Mejorar la presentación de la tabla ordenada (opcional)
+# install.packages("kableExtra")
+# library(kableExtra)
+# tabla_na_ordenada %>%
+#   kable("html") %>%
+#   kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+La libreria DT, permite mostrar la tabla de una manera mas estetica, no olvides instalar el paquete DT.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+datatable(tabla_na_ordenada)
+```
+
+## Selección de la variables que se van a estudiar (Columnas)
+
+Se seleccionan solo las siguientes variables:
+
++ **COD_DPTO**:Departamento donde ocurrió la defunción;
+05= Antioquia, 08= Atlántico, 11= Bogotá, 13= Bolivar, 15= Boyaca, 17=Caldas, 18=Caqueta, 19=Cauca, 20= Cesar, 23= Cordoba, 25=Cundinamarca, 27= Choco, 41= Huila, 44= La guajira, 47= Magdalena, 50= Meta, 52= Nariño,54= Norte de Santander, 63=Quindio, 66= Risaralda, 68= Santander, 70= Sucre, 73= Tolima, 76= Valle del Cauca, 81=Arauca, 85= Casanare, 86= Putumayo, 88=Archipiélago de San Andrés Providencia ySanta Catalina, 91= Amazonas, 94= Guainía, 95= Guaviare, 97= Vaupés, 99= Vichada
++ **SEXO**: Sexo del fallecido; 1 = Masculino, 2 = Femenino, 3 = Indeterminado.
++ **EST_CIVIL**: Estado conyugal del fallecido; 1= No estaba casado(a) y llevaba dos o más años viviendo con su pareja, 2= No estaba casado(a) y llevaba menos de dos años viviendo con su pareja, 3= Estaba separado(a) divorciado(a), 4= Estaba viudo(a), 5= Estaba soltero(a), 6= Estaba casado(a), 9= Sin información.
++ **GRU_ED2**: Agrupación de edades, según la edad del fallecido 01 = Menor de 1 año, 02 = De 1 a 4 años, 03 = De 5 a 14 años, 04 = De 15 a 44 años, 05 = De 45 a 64 años, 06 = De 65 y mas años, 07 = Edad desconocida.
++ **C_DIR1**: Causa Directa: Código de la causa de defunción informada en el renglón a) Código, según la Clasificación Internacional de Enfermedades CIE - 10.
+
+
+```{r}
+datos_agr <-data %>% #definio la variable.
+  select(COD_DPTO,SEXO,EST_CIVIL,C_DIR1, GRU_ED1)
+#datos_agr
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+datatable(datos_agr)
+```
+
+### Cargar el diccionario de departamentos a R.
+
+Cargar el archivo excel donde esta los códigos de los departamentos, según el DIVIPOLA y cambiar el nombre de la columna codigo a COD_DPTO, para poder relacionarla con datos_agr y así poder conocer los datos respectivos por departamento, pues en datos_agr solo estan los códigos de los departamentos.
+
+
+```{r}
+# Leer el archivo Excel
+dicc_excel <- read_excel("../datos/dicc_depts.xlsx")
+# Cambiar el nombre de la columna "codigo" a "COD_DPTO"
+dicc_excel <- dicc_excel %>%
+  rename(COD_DPTO = codigo)
+
+# Verificar el cambio
+print(head(dicc_excel))
+
+```
+
+El código anterior cambio el nombre de la columna "codigo" a "COD_DPTO".
+
+
+
+### Relacionar los dos archivos 
+
+Relacionamos los archivos "dicc_depts" y "nofetal2015.csv", juntandolos los dos dataframes por COD_DPTO, para poder hacer los análisis por departamento. 
+
+Para tener en cuenta como relacionar dos archivos puedes nuevamente hacer uso de la IA que te agrade o revisa este video <https://www.youtube.com/watch?v=KBSzIzy17u0>.
+
+En nuestro caso relacionamos datos_agr y dicc_excel con left_join por COD_DPTO, y le damos el nombre "datos_agr".
+
+
+```{r}
+# Combinar los dataframes
+datos_agr <- datos_agr %>%
+  left_join(dicc_excel, by = "COD_DPTO")
+
+# Verificar el resultado
+#print(datos_agr)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+datatable(datos_agr)
+```
+
+### Número de datos perdidos 
+
+Establecemos los datos perdidos en datos_agr con las respectivas variables seleccionadas 
+
+```{r}
+# Número total de datos perdidos en el dataframe
+total_na <- sum(is.na(datos_agr))
+
+print(total_na)
+```
+
+
+Número de defunciones deportadas por departamento, en orden descendente,
+
+
+```{r}
+# Contar el número de datos por departamento
+conteo_dpto <- datos_agr %>%
+  count(Departamento)%>%
+arrange(desc(n))
+
+# Ver el resultado
+#print(conteo_dpto)
+```
+Presentación de los resultados en una tabla adecuada con sus respectivos filtros 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+datatable(conteo_dpto)
+```
+
+<center>
+## Intoxicaciones
+</center>
+
+Seleccionaremos solo causa de defunción efecto tóxico de contacto con animales y plantas venenosos, para esto los invito a  revisar los códigos de  Clasificación Internacional de Enfermedades (CIE-10), en la página
+
+<center>
+<https://mediately.co/es/icd?chapterCode=S00-T88&setCode=T51-T65#active>
+</center>
+
+solo estudiaremos los casos cuya causa  de defunción fue registrada como efecto tóxico de contacto con animales y plantas venenosos:
+
+| Código CIE-10 | Descripción                                                                 |
+|---------------|-----------------------------------------------------------------------------|
+| **T630**      | Efectos tóxicos por mordedura de serpiente.                                |
+| **T632**      | Efectos tóxicos por mordedura de otros reptiles venenosos (no serpientes). |
+| **T634**      | Efectos tóxicos por contacto con animales marinos venenosos.               |
+| **T639**      | Efectos tóxicos de contacto con animales venenosos, no especificados.      |
+
+
+El código para seleccionar solo estos códigos de la columna C_DIR1, es:
+
+```{r}
+# Obtener las categorías que comienzan con "T63"
+categorias_t63 <- grep("^T63", datos_agr$C_DIR1, value = TRUE)
+
+# Obtener las categorías únicas
+categorias_t63_unicas <- unique(categorias_t63)
+
+# Mostrar las categorías únicas
+print("Categorías únicas que comienzan con 'T63':")
+print(categorias_t63_unicas)
+# Contar la frecuencia de cada categoría
+frecuencia_t63 <- table(categorias_t63)
+frecuencia_t63
+```
+
+Agrupando por departamento:
+
+```{r}
+# Filtrar categorías que comienzan con "T63" usando grep
+categorias_t63_por_dpto <- datos_agr %>%
+  filter(grepl("^T63", C_DIR1)) %>%
+  group_by(Departamento, C_DIR1) %>%
+  summarise(Conteo = n(), .groups = 'drop')
+
+# Mostrar el resultado
+#print(categorias_t63_por_dpto)
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+datatable(categorias_t63_por_dpto)
+```
+
+### Conclusiones
+
+El análisis de los datos del DANE (Departamento Administrativo Nacional de Estadística) del año 2015 muestra la distribución de casos relacionados con efectos tóxicos por contacto con animales venenosos, clasificados bajo códigos CIE-10 que comienzan con "T63", en diferentes departamentos. La categoría T630, que corresponde a efectos tóxicos por mordedura de serpiente, es la más frecuente, registrándose un caso en cada uno de los departamentos de Cesar, Chocó, Córdoba y Meta. Por otro lado, en Antioquia se reportan dos casos de la categoría T634, asociada a efectos tóxicos por contacto con animales marinos venenosos, lo que podría indicar una mayor incidencia de este tipo de eventos en esa región. Además, se observa un caso de T632, relacionado con mordeduras de otros reptiles venenosos (no serpientes), en Tolima, y un caso de T639, que abarca efectos tóxicos de contacto con animales venenosos no especificados, en Sucre. Estos resultados reflejan diferencias geográficas en la exposición a animales venenosos, posiblemente influenciadas por las características ecológicas y ambientales de cada departamento. Los datos del DANE del año 2015 proporcionan una visión detallada de la distribución de estos eventos, lo que puede ser útil para la implementación de estrategias de prevención y atención en las regiones más afectadas.
+
+<center>
+## Violencia y Accidentes.
+</center>
+
+Se analizarán las frecuencias de defunciones asociadas a los códigos X e Y de la CIE-10, que abarcan causas como homicidios, suicidios, accidentes de tránsito, intoxicaciones y traumatismos no intencionales (por ejemplo, los códigos X85-Y09 para agresiones y X60-X84 para suicidios).
+
+```{r}
+# Filtrar categorías que comienzan con "X" o "Y" y agrupar por departamento
+categorias_agresiones_por_dpto <- datos_agr %>%
+  filter(grepl("^[XY]", C_DIR1)) %>%
+  group_by(Departamento, C_DIR1) %>%
+  summarise(Conteo = n(), .groups = 'drop')
+
+#install.packages("tidyr") # instalar solo una vez
+
+library(tidyr)
+
+# Crear la tabla cruzada
+tabla_cruzada <- categorias_agresiones_por_dpto %>%
+  pivot_wider(names_from = C_DIR1, values_from = Conteo, values_fill = list(Conteo = 0))
+
+# Mostrar la tabla cruzada
+#print(tabla_cruzada)
+
+#categorias_agresiones_por_dpto
+
+# tabla_cruzada
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+datatable(categorias_agresiones_por_dpto)
+```
+
+
+En la tabla presentada a continuación observamos una tabla correspondiente al departamento y la causa de la defunción correspondiente.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+datatable(tabla_cruzada)
+```
+
+```{r}
+library(dplyr)
+
+# Cargar el paquete dplyr
+library(dplyr)
+
+# Calcular las frecuencias de categorías por departamento y ordenar en orden descendente
+frecuencias_por_dpto <- categorias_agresiones_por_dpto %>%
+  group_by(Departamento) %>%
+  summarise(Total = sum(Conteo), .groups = 'drop') %>%
+  arrange(desc(Total))  # Ordenar de mayor a menor
+
+# Mostrar el resultado
+# print(frecuencias_por_dpto)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(DT)
+datatable(frecuencias_por_dpto)
+```
+
+### Guardar los resultados en Excel
+
+Guardar los datos obtenidos "categorias_agresiones_por_dpto" en formato Excel en la carpeta Resultados
+
+```{r}
+# installed.packages("writexl")
+library(writexl)
+write_xlsx(categorias_agresiones_por_dpto,"../Resultados/categorias_agresiones_por_dpto.xlsx")#escribe datos agrupados en ruta(documentos) colocar la extensión .xlsx
+
+```
+
+### Creación de graficas con "esquisse"
+
+A continuación cargaremos el  paquete esquisse de  R que facilita la creación de gráficos interactivos a través de una interfaz gráfica, permitiendo a los usuarios arrastrar y soltar variables para generar visualizaciones. Utiliza ggplot2 como base y permite crear diversos tipos de gráficos, como barras, líneas y dispersión, generando automáticamente el código correspondiente. Es ideal para usuarios principiantes o aquellos que prefieren un enfoque visual para explorar y visualizar datos rápidamente.
+
+Para profundizar en la implementación de la libreria ver el siguiente video:
+
+<https://www.youtube.com/watch?v=wKYIOZ611ao>
+
+```{r}
+#ARCHIVOS RMD
+#para entregas html 
+ 
+# Graficos en R muy rapido
+#install.packages("esquisse")#para gráficos en R muy rápido.
+#library(esquisse)
+#esquisser()#lanza interfaz para hacer gráficos muy rápido
+
+
+```
+
+```{r}
+library(ggplot2)
+ggplot(categorias_agresiones_por_dpto) +
+  aes(x = Departamento, y = Conteo) +
+  geom_col(fill = "#112446") +
+  labs(
+    y = "Frecuencias",
+    title = "Número de defunciones",
+    subtitle = "Por departamento"
+  ) +
+  coord_flip() +
+  theme_minimal()
+
+
+```
+
+
+### Conclusiones 
+
+Hallazgos Clave
+
+Los departamentos con Mayor Mortalidad:
+
+Antioquia (37 casos) de defunciones por violencia interpersonal y accidentes.
+
+Nariño (17) y Bogotá (16)de defunciones por violencia interpersonal y accidentes.
+
+Cundinamarca (11) y Norte de Santander (9) casos de defunciones por violencia interpersonal y accidentes.
+
+
+
+Posibles subregistro Potencial:
+
+Departamentos con bajos registros (ej. Magdalena o Atlántico con 5 casos) podrían tener subnotificación, especialmente en zonas rurales sin acceso a forensia.
+
+# Bibliografía
+
+La bibliografía utilizada fue @baumer2015r , @zuniga2014accidente , @xie2018r
+
+
+
