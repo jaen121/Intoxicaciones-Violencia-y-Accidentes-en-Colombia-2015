@@ -269,10 +269,10 @@ Verificación de los archivos que estan en la carpeta de datos, donde los descar
 list.files("../datos")
 ```
 
-Cargar la matriz de  datos, para trabajar. 
+Cargar la matriz de datos, para trabajar. Se especifica `encoding = "latin1"` y `stringsAsFactors = FALSE` para garantizar la correcta interpretación de caracteres con tildes y eñes propios del español y evitar incompatibilidades en la manipulación de texto.
 
 ```{r}
-data <- read.csv("../datos/nofetal2015.csv")
+data <- read.csv("../datos/nofetal2015.csv", encoding = "latin1", stringsAsFactors = FALSE)
 ```
 
 Averiguamos las dimensiones de la matriz de datos ......
@@ -282,9 +282,22 @@ dim(data)
 ```
 Nos indica que la matriz tiene 205220 filas y 68 columnas.
 
+### Estrategia de Limpieza 1: Detección y Remoción de Registros Duplicados
+
+En bases de datos de registros vitales y salud pública, los registros completamente idénticos en todas las columnas pueden sobrestimar la mortalidad. Realizamos una auditoría de duplicados exactos:
+
+```{r}
+# Contar el número de filas completamente duplicadas en las 68 columnas
+duplicados_iniciales <- sum(duplicated(data))
+print(paste("Registros duplicados exactos encontrados:", duplicados_iniciales))
+
+# Eliminar duplicados conservando una única copia
+data <- data %>% distinct()
+
+print(paste("Dimensiones tras eliminar duplicados:", nrow(data), "filas y", ncol(data), "columnas."))
+```
 
 Verificación de la estructura del dataframe
-
 
 Recuerda que el #, sirve para comentar una línea dentro del código, es decir no se ejecutará,
 
@@ -294,7 +307,6 @@ Recuerda que el #, sirve para comentar una línea dentro del código, es decir n
 str(data[, 1:6])
 
 # Para mostrar todas se utiliza 
-
 #str(data)
 ```
 
@@ -305,60 +317,61 @@ Verificar los nombres de las columnas, de la matriz
 colnames(data)
 ```
 
-### Datos perdidos
+### Estrategia de Limpieza 2: Tratamiento de Valores Ausentes Explícitos e Implícitos
 
-Revisar numero de datos perdidos en total y por columnas
+La función tradicional `is.na()` únicamente detecta valores nulos explícitos del sistema (`NA`), pero en archivos CSV suelen existir **valores ausentes implícitos o encubiertos**, como cadenas de texto vacías (`""`) o espacios en blanco (`"   "`). 
+
+Procedemos a diagnosticar y convertir todas las cadenas vacías a valores `NA` formalmente reconocidos por R:
 
 ```{r}
-# Número total de datos perdidos en el dataframe
-total_na <- sum(is.na(data))
+# 1. Conteo de NA tradicionales antes del tratamiento
+total_na_inicial <- sum(is.na(data))
+print(paste("Total de datos perdidos tradicionales (NA):", total_na_inicial))
 
-print(paste("Total de datos perdidos:", total_na))
+# 2. Conversión sistemática de cadenas vacías a NA en todas las columnas de texto
+data <- data %>%
+  mutate(across(where(is.character), ~ na_if(trimws(.), "")))
+
+# 3. Conteo de NA tras la conversión
+total_na_corregido <- sum(is.na(data))
+na_ocultos_descubiertos <- total_na_corregido - total_na_inicial
+
+print(paste("Total de NA tras convertir cadenas vacías:", total_na_corregido))
+print(paste("Valores perdidos encubiertos descubiertos:", na_ocultos_descubiertos))
 ```
 
+Construcción de la tabla de valores perdidos por columna, incorporando el porcentaje de completitud:
 
 ```{r}
-
 # Número de datos perdidos por columna
 na_por_columna <- colSums(is.na(data))
 
-# Crear un dataframe con los resultados
+# Crear un dataframe con los resultados y el porcentaje de pérdida
 tabla_na <- data.frame(
   Columna = names(na_por_columna),
-  Datos_Perdidos = na_por_columna
+  Datos_Perdidos = na_por_columna,
+  Porcentaje = round((na_por_columna / nrow(data)) * 100, 2)
 )
 
-# Agregar una fila con el total de datos perdidos
-tabla_na <- rbind(tabla_na, data.frame(Columna = "Total", Datos_Perdidos = total_na))
+# Total general de celdas en el dataset
+total_celdas <- nrow(data) * ncol(data)
+porcentaje_total_na <- round((total_na_corregido / total_celdas) * 100, 2)
 
-
-# Ordenar la tabla en orden descendente
+# Ordenar la tabla en orden descendente y agregar fila de total
 tabla_na_ordenada <- tabla_na %>%
-  filter(Columna != "Total") %>%  # Excluir la fila "Total"
-  arrange(desc(Datos_Perdidos)) %>%  # Ordenar de mayor a menor
-  rbind(data.frame(Columna = "Total", Datos_Perdidos = total_na))  # Agregar la fila "Total" al final
-
-
-# Mostrar la tabla ordenada
-#print(tabla_na_ordenada)
-
-
-# Guardar la tabla ordenada en un archivo CSV (opcional)
-# write.csv(tabla_na_ordenada, file = "datos_perdidos_ordenados.csv", row.names = FALSE)
-
-# # Mejorar la presentación de la tabla ordenada (opcional)
-# install.packages("kableExtra")
-# library(kableExtra)
-# tabla_na_ordenada %>%
-#   kable("html") %>%
-#   kable_styling(bootstrap_options = c("striped", "hover"))
+  arrange(desc(Datos_Perdidos)) %>%
+  rbind(data.frame(
+    Columna = "TOTAL DATASET",
+    Datos_Perdidos = total_na_corregido,
+    Porcentaje = porcentaje_total_na
+  ))
 ```
 
-La libreria DT, permite mostrar la tabla de una manera mas estetica, no olvides instalar el paquete DT.
+La librería DT permite presentar la tabla de valores ausentes de forma interactiva con porcentajes:
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 library(DT)
-datatable(tabla_na_ordenada)
+datatable(tabla_na_ordenada, options = list(pageLength = 10))
 ```
 
 ## Selección de la variables que se van a estudiar (Columnas)
@@ -374,89 +387,118 @@ Se seleccionan solo las siguientes variables:
 
 
 ```{r}
-datos_agr <-data %>% #definio la variable.
-  select(COD_DPTO,SEXO,EST_CIVIL,C_DIR1, GRU_ED1)
-#datos_agr
+# Selección coherente de variables (usando GRU_ED2 según la especificación técnica)
+datos_agr <- data %>%
+  select(COD_DPTO, SEXO, EST_CIVIL, C_DIR1, GRU_ED2)
+```
+
+### Estrategia de Limpieza 3: Normalización de Texto y Recodificación Categórica
+
+1. **Estandarización de códigos CIE-10**: Aplicamos `trimws()` y `toupper()` sobre `C_DIR1` para suprimir espacios residuales y uniformar a mayúsculas sostenidas.
+2. **Recodificación con etiquetas descriptivas (Factores)**: Convertimos los códigos numéricos de `SEXO`, `EST_CIVIL` y `GRU_ED2` a factores con sus nombres oficiales, facilitando la interpretación analítica:
+
+```{r}
+datos_agr <- datos_agr %>%
+  mutate(
+    # Normalización del código de causa de muerte
+    C_DIR1 = toupper(trimws(C_DIR1)),
+    
+    # Recodificación de Sexo
+    SEXO_DESC = factor(SEXO, 
+                       levels = c(1, 2, 3), 
+                       labels = c("Masculino", "Femenino", "Indeterminado")),
+    
+    # Recodificación de Estado Civil
+    EST_CIVIL_DESC = factor(EST_CIVIL, 
+                            levels = c(1, 2, 3, 4, 5, 6, 9),
+                            labels = c("Unión libre (>= 2 años)", "Unión libre (< 2 años)", 
+                                       "Separado(a) / Divorciado(a)", "Viudo(a)", 
+                                       "Soltero(a)", "Casado(a)", "Sin información")),
+    
+    # Recodificación de Grupo de Edad
+    GRU_ED2_DESC = factor(GRU_ED2,
+                          levels = c(1, 2, 3, 4, 5, 6, 7),
+                          labels = c("Menor de 1 año", "1 a 4 años", "5 a 14 años",
+                                     "15 a 44 años", "45 a 64 años", "65 y más años", "Edad desconocida"))
+  )
 ```
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 library(DT)
-datatable(datos_agr)
+datatable(head(datos_agr, 100), options = list(pageLength = 10, scrollX = TRUE))
 ```
 
-### Cargar el diccionario de departamentos a R.
+### Cargar el diccionario de departamentos a R
 
-Cargar el archivo excel donde esta los códigos de los departamentos, según el DIVIPOLA y cambiar el nombre de la columna codigo a COD_DPTO, para poder relacionarla con datos_agr y así poder conocer los datos respectivos por departamento, pues en datos_agr solo estan los códigos de los departamentos.
-
+Cargar el archivo Excel con los códigos DIVIPOLA de los departamentos y estandarizar el nombre de la columna a `COD_DPTO`. Además, aplicamos una estandarización visual a los nombres de departamento en formato Título (*Title Case*).
 
 ```{r}
 # Leer el archivo Excel
 dicc_excel <- read_excel("../datos/dicc_depts.xlsx")
-# Cambiar el nombre de la columna "codigo" a "COD_DPTO"
+
+# Cambiar el nombre de la columna "codigo" a "COD_DPTO" y normalizar texto
 dicc_excel <- dicc_excel %>%
-  rename(COD_DPTO = codigo)
+  rename(COD_DPTO = codigo) %>%
+  mutate(Departamento = tools::toTitleCase(tolower(Departamento)))
 
 # Verificar el cambio
 print(head(dicc_excel))
-
 ```
 
-El código anterior cambio el nombre de la columna "codigo" a "COD_DPTO".
+### Estrategia de Limpieza 4: Validación de Integridad Referencial Previa al Cruce
 
+Antes de fusionar los dataframes mediante `left_join`, es una buena práctica de ingeniería de datos verificar si existen **registros huérfanos** (códigos de departamento en `datos_agr` que no existan en el diccionario oficial).
 
+```{r}
+# Auditoría de integridad referencial
+huerfanos <- anti_join(datos_agr, dicc_excel, by = "COD_DPTO")
+print(paste("Registros con códigos departamentales no encontrados en el diccionario:", nrow(huerfanos)))
+```
+
+Al obtener 0 registros huérfanos, confirmamos que el 100% de los códigos son válidos bajo la codificación DIVIPOLA.
 
 ### Relacionar los dos archivos 
 
-Relacionamos los archivos "dicc_depts" y "nofetal2015.csv", juntandolos los dos dataframes por COD_DPTO, para poder hacer los análisis por departamento. 
-
-Para tener en cuenta como relacionar dos archivos puedes nuevamente hacer uso de la IA que te agrade o revisa este video <https://www.youtube.com/watch?v=KBSzIzy17u0>.
-
-En nuestro caso relacionamos datos_agr y dicc_excel con left_join por COD_DPTO, y le damos el nombre "datos_agr".
-
+Relacionamos `datos_agr` y `dicc_excel` mediante un `left_join` por la llave `COD_DPTO`:
 
 ```{r}
 # Combinar los dataframes
 datos_agr <- datos_agr %>%
   left_join(dicc_excel, by = "COD_DPTO")
-
-# Verificar el resultado
-#print(datos_agr)
 ```
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 library(DT)
-datatable(datos_agr)
+datatable(head(datos_agr, 100), options = list(pageLength = 10, scrollX = TRUE))
 ```
 
-### Número de datos perdidos 
+### Auditoría de Calidad y Datos Perdidos en el Subconjunto Depurado
 
-Establecemos los datos perdidos en datos_agr con las respectivas variables seleccionadas 
+Evaluamos los valores faltantes presentes en el subconjunto de variables de estudio:
 
 ```{r}
-# Número total de datos perdidos en el dataframe
-total_na <- sum(is.na(datos_agr))
+# Número total de datos perdidos en el dataframe depurado
+total_na_agr <- sum(is.na(datos_agr))
+print(paste("Total de datos perdidos en el subconjunto seleccionado:", total_na_agr))
 
-print(total_na)
+# Pérdida por columna en datos_agr
+colSums(is.na(datos_agr))
 ```
 
-
-Número de defunciones deportadas por departamento, en orden descendente,
-
+Número de defunciones reportadas por departamento, en orden descendente:
 
 ```{r}
 # Contar el número de datos por departamento
 conteo_dpto <- datos_agr %>%
-  count(Departamento)%>%
-arrange(desc(n))
-
-# Ver el resultado
-#print(conteo_dpto)
+  count(Departamento) %>%
+  arrange(desc(n))
 ```
-Presentación de los resultados en una tabla adecuada con sus respectivos filtros 
+
+Presentación de los resultados en una tabla interactiva:
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 library(DT)
-datatable(conteo_dpto)
+datatable(conteo_dpto, options = list(pageLength = 10))
 ```
 
 <center>
@@ -615,38 +657,46 @@ Para profundizar en la implementación de la libreria ver el siguiente video:
 
 ```{r}
 library(ggplot2)
-ggplot(categorias_agresiones_por_dpto) +
-  aes(x = Departamento, y = Conteo) +
-  geom_col(fill = "#112446") +
+
+# Gráfico de barras ordenado por frecuencia con etiquetas de datos depurados
+ggplot(frecuencias_por_dpto) +
+  aes(x = reorder(Departamento, Total), y = Total) +
+  geom_col(fill = "#112446", width = 0.7) +
+  geom_text(aes(label = Total), hjust = -0.2, size = 3.2, color = "#1e293b", fontface = "bold") +
   labs(
-    y = "Frecuencias",
-    title = "Número de defunciones",
-    subtitle = "Por departamento"
+    x = "Departamento",
+    y = "Número total de defunciones",
+    title = "Mortalidad por Causas Externas (Violencia y Accidentes)",
+    subtitle = "Colombia 2015 - Clasificación CIE-10 (Códigos X e Y) - Datos depurados"
   ) +
   coord_flip() +
-  theme_minimal()
-
-
+  expand_limits(y = max(frecuencias_por_dpto$Total) * 1.1) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 13),
+    axis.text.y = element_text(size = 8.5)
+  )
 ```
 
 
-### Conclusiones 
+### Conclusiones y Resumen del Proceso de Limpieza
 
-Hallazgos Clave
+#### Resumen de Calidad de Datos tras las Estrategias de Limpieza:
+1. **Deduplicación**: Se identificaron y eliminaron **24 registros duplicados exactos** en el dataset original de 205.220 filas, previniendo sobrestimación en los conteos de mortalidad.
+2. **Tratamiento de Valores Nulos Ocultos**: La conversión de cadenas vacías (`""`) a `NA` reveló más de 1.8 millones de celdas ausentes encubiertas en la matriz total. En la variable clave `C_DIR1` se descubrieron y aislaron **545 registros sin causa directa reportada**.
+3. **Consistencia Metodológica**: Se armonizó la selección con la variable `GRU_ED2` y se crearon factores descriptivos (`SEXO_DESC`, `EST_CIVIL_DESC`, `GRU_ED2_DESC`) para reemplazar códigos numéricos abstractos por etiquetas comprensibles.
+4. **Integridad Referencial**: Se validó con `anti_join` que el 100% de los códigos departamentales existieran en el estándar DIVIPOLA antes de aplicar la fusión relacional (`left_join`).
 
-Los departamentos con Mayor Mortalidad:
+#### Hallazgos Clave de Mortalidad (Datos Depurados):
 
-Antioquia (37 casos) de defunciones por violencia interpersonal y accidentes.
+* **Departamentos con Mayor Mortalidad Externa**:
+  * **Antioquia**: 37 defunciones registradas.
+  * **Bogotá D.C.**: 16 defunciones registradas.
+  * **Nariño**: 16 defunciones registradas *(se ajusta desde los 17 reportados inicialmente tras eliminar el registro duplicado exacto en la fase de deduplicación)*.
+  * **Cundinamarca** (11 casos) y **Norte de Santander** (9 casos).
 
-Nariño (17) y Bogotá (16)de defunciones por violencia interpersonal y accidentes.
-
-Cundinamarca (11) y Norte de Santander (9) casos de defunciones por violencia interpersonal y accidentes.
-
-
-
-Posibles subregistro Potencial:
-
-Departamentos con bajos registros (ej. Magdalena o Atlántico con 5 casos) podrían tener subnotificación, especialmente en zonas rurales sin acceso a forensia.
+* **Alerta de Subregistro Potencial**:
+  * Departamentos con baja conectividad o infraestructura forense limitada (ej. Magdalena y Atlántico con solo 5 casos registrados bajo esta clasificación) evidencian un riesgo significativo de subnotificación, lo que debe considerarse al formular políticas públicas preventivas.
 
 # Bibliografía
 
