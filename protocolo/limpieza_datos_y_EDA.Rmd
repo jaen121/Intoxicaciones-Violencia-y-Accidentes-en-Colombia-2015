@@ -2,6 +2,7 @@
 
 ---
 title: "Análisis de las Muertes por Causas Evitables en Colombia: Intoxicaciones, Violencia y Accidentes en 2015"
+subtitle: "Especialización en Inteligencia Artificial"
 author: "Jairo Enrique Alba"
 date: ""
 output:
